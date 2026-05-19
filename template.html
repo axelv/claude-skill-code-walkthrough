@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>{{TITLE}}</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reset.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/theme/black.css" id="theme" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/plugin/highlight/monokai.css" />
+
+  <style>
+    :root {
+      --r-heading-font: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      --r-main-font: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      --r-code-font: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+    }
+    .reveal h2 { font-weight: 600; letter-spacing: -0.01em; margin-bottom: 0.4em; }
+    .reveal .loc { font-size: 0.55em; opacity: 0.7; margin-top: -0.6em; margin-bottom: 0.8em; }
+    .reveal .loc a { color: #8ab4f8; text-decoration: none; border-bottom: 1px dotted #8ab4f8; }
+    .reveal .loc a:hover { opacity: 1; border-bottom-style: solid; }
+    .reveal pre {
+      width: 100%;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+      border-radius: 6px;
+      font-size: 0.5em;
+      line-height: 1.4;
+    }
+    .reveal pre code { padding: 1em 1.2em; max-height: 60vh; }
+    .reveal .narrative {
+      font-size: 0.65em;
+      max-width: 80%;
+      margin: 1em auto 0;
+      text-align: left;
+      line-height: 1.5;
+      opacity: 0.9;
+    }
+    .reveal .narrative p { margin: 0.4em 0; }
+    .reveal .narrative code {
+      background: rgba(255,255,255,0.08);
+      padding: 0.1em 0.4em;
+      border-radius: 3px;
+      font-size: 0.95em;
+    }
+    .reveal pre.mermaid {
+      box-shadow: none;
+      background: transparent;
+      font-size: 1em;
+      width: 100%;
+      max-height: 65vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+    .reveal pre.mermaid svg { max-width: 100%; max-height: 65vh; height: auto; }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+      <section>
+        <h1>{{TITLE}}</h1>
+        <p style="opacity:0.6;font-size:0.6em;margin-top:2em;">
+          arrows / <kbd>space</kbd> — advance &nbsp;·&nbsp;
+          <kbd>esc</kbd> — overview &nbsp;·&nbsp;
+          <kbd>s</kbd> — speaker notes
+        </p>
+      </section>
+
+      {{SLIDES}}
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5/plugin/highlight/highlight.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5/plugin/notes/notes.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5/plugin/markdown/markdown.js"></script>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'dark',
+      securityLevel: 'loose',
+      flowchart: { curve: 'basis' },
+      themeVariables: { fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif' },
+    });
+
+    function renderActiveDiagrams() {
+      const slides = document.querySelectorAll('.reveal .slides section.present');
+      slides.forEach((slide) => {
+        const pending = slide.querySelectorAll('pre.mermaid:not([data-processed="true"])');
+        if (pending.length) mermaid.run({ nodes: pending });
+      });
+    }
+
+    Reveal.initialize({
+      hash: true,
+      slideNumber: 'c/t',
+      transition: 'slide',
+      controls: true,
+      progress: true,
+      center: false,
+      plugins: [RevealHighlight, RevealNotes, RevealMarkdown],
+    }).then(() => {
+      Reveal.on('slidechanged', renderActiveDiagrams);
+      renderActiveDiagrams();
+    });
+  </script>
+</body>
+</html>

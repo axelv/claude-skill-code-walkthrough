@@ -23,7 +23,8 @@ The skill ships syntax references for the diagram types most useful in code tour
 
 | Use case | Type |
 | --- | --- |
-| Service topology, deployment shape | `architecture-beta` |
+| Codebase shape — crates, modules, file relationships | `flowchart` + `subgraph` |
+| Cloud / service topology (databases, queues, gateways) | `architecture-beta` |
 | Software architecture (context / container / component) | C4 |
 | Control flow, decision logic | `flowchart` |
 | API calls, async interactions | `sequenceDiagram` |

@@ -16,27 +16,28 @@
       --r-main-font: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
       --r-code-font: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
     }
-    .reveal h2 { font-weight: 600; letter-spacing: -0.01em; margin-bottom: 0.4em; }
-    .reveal .loc { font-size: 0.55em; opacity: 0.7; margin-top: -0.6em; margin-bottom: 0.8em; }
+    .reveal .slides section { overflow-y: auto; }
+    .reveal h2 { font-weight: 600; letter-spacing: -0.01em; margin-bottom: 0.3em; }
+    .reveal .loc { font-size: 0.5em; opacity: 0.7; margin-top: -0.4em; margin-bottom: 0.6em; }
     .reveal .loc a { color: #8ab4f8; text-decoration: none; border-bottom: 1px dotted #8ab4f8; }
     .reveal .loc a:hover { opacity: 1; border-bottom-style: solid; }
     .reveal pre {
       width: 100%;
       box-shadow: 0 4px 24px rgba(0,0,0,0.4);
       border-radius: 6px;
-      font-size: 0.5em;
+      font-size: 0.42em;
       line-height: 1.4;
     }
-    .reveal pre code { padding: 1em 1.2em; max-height: 60vh; }
+    .reveal pre code { padding: 1em 1.2em; max-height: 48vh; }
     .reveal .narrative {
-      font-size: 0.65em;
+      font-size: 0.55em;
       max-width: 80%;
-      margin: 1em auto 0;
+      margin: 0.6em auto 0;
       text-align: left;
       line-height: 1.5;
       opacity: 0.9;
     }
-    .reveal .narrative p { margin: 0.4em 0; }
+    .reveal .narrative p { margin: 0.3em 0; }
     .reveal .narrative code {
       background: rgba(255,255,255,0.08);
       padding: 0.1em 0.4em;
@@ -53,8 +54,70 @@
       justify-content: center;
       align-items: center;
       overflow: hidden;
+      cursor: zoom-in;
+      position: relative;
     }
     .reveal pre.mermaid svg { max-width: 100%; max-height: 65vh; height: auto; }
+    .reveal pre.mermaid::after {
+      content: "click to zoom";
+      position: absolute;
+      bottom: 0.3em;
+      right: 0.6em;
+      font-size: 0.35em;
+      opacity: 0;
+      transition: opacity 120ms;
+      pointer-events: none;
+      font-family: var(--r-main-font);
+      background: rgba(0,0,0,0.55);
+      padding: 0.2em 0.5em;
+      border-radius: 3px;
+    }
+    .reveal pre.mermaid:hover::after { opacity: 0.85; }
+    .reveal pre.mermaid.mermaid-error {
+      border: 2px solid #e06c75;
+      background: rgba(224, 108, 117, 0.08);
+      cursor: not-allowed;
+      min-height: 4em;
+      padding-top: 1.6em;
+    }
+    .reveal pre.mermaid.mermaid-error::before {
+      content: "⚠ mermaid syntax error — check browser console for the bad token";
+      position: absolute;
+      top: 0.4em;
+      left: 0.6em;
+      color: #e06c75;
+      font-size: 0.4em;
+      font-family: var(--r-main-font);
+      pointer-events: none;
+    }
+    .reveal pre.mermaid.mermaid-error::after { display: none; }
+
+    #zoom-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.92);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      padding: 3vh 3vw;
+      cursor: zoom-out;
+    }
+    #zoom-overlay.open { display: flex; }
+    #zoom-overlay svg {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+    }
+    #zoom-overlay .hint {
+      position: fixed;
+      bottom: 1em;
+      right: 1.2em;
+      color: rgba(255,255,255,0.5);
+      font-family: var(--r-main-font);
+      font-size: 0.9em;
+    }
   </style>
 </head>
 <body>
@@ -73,6 +136,10 @@
     </div>
   </div>
 
+  <div id="zoom-overlay" aria-hidden="true">
+    <span class="hint">esc / click to close</span>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/reveal.js@5/plugin/highlight/highlight.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/reveal.js@5/plugin/notes/notes.js"></script>
@@ -87,11 +154,62 @@
       themeVariables: { fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif' },
     });
 
+    const overlay = document.getElementById('zoom-overlay');
+
+    function openZoom(svg) {
+      const clone = svg.cloneNode(true);
+      clone.removeAttribute('style');
+      clone.style.maxWidth = '100%';
+      clone.style.maxHeight = '100%';
+      [...overlay.querySelectorAll('svg')].forEach((n) => n.remove());
+      overlay.insertBefore(clone, overlay.firstChild);
+      overlay.classList.add('open');
+      overlay.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeZoom() {
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden', 'true');
+    }
+
+    overlay.addEventListener('click', closeZoom);
+    // capture phase so esc closes zoom before reveal.js's overview handler fires
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && overlay.classList.contains('open')) {
+        e.stopPropagation();
+        closeZoom();
+      }
+    }, true);
+
+    function markErrors(container) {
+      // mermaid's parse-error renderer injects an SVG with aria-roledescription="error"
+      // (the bomb-icon UI). Tag the host so CSS can flag it loudly.
+      container.querySelectorAll('pre.mermaid svg[aria-roledescription="error"]').forEach((svg) => {
+        svg.closest('pre.mermaid')?.classList.add('mermaid-error');
+      });
+    }
+
+    function wireZoom(container) {
+      container.querySelectorAll('pre.mermaid:not(.mermaid-error) svg:not([data-zoom-wired])').forEach((svg) => {
+        svg.setAttribute('data-zoom-wired', 'true');
+        const host = svg.closest('pre.mermaid');
+        host.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openZoom(svg);
+        });
+      });
+    }
+
     function renderActiveDiagrams() {
       const slides = document.querySelectorAll('.reveal .slides section.present');
       slides.forEach((slide) => {
         const pending = slide.querySelectorAll('pre.mermaid:not([data-processed="true"])');
-        if (pending.length) mermaid.run({ nodes: pending });
+        const finish = () => { markErrors(slide); wireZoom(slide); };
+        if (pending.length) {
+          mermaid.run({ nodes: pending, suppressErrors: true }).then(finish).catch(finish);
+        } else {
+          finish();
+        }
       });
     }
 

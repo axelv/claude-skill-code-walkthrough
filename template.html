@@ -16,21 +16,62 @@
       --r-main-font: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
       --r-code-font: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
     }
-    .reveal .slides section { overflow-y: auto; }
-    .reveal h2 { font-weight: 600; letter-spacing: -0.01em; margin-bottom: 0.3em; }
-    .reveal .loc { font-size: 0.5em; opacity: 0.7; margin-top: -0.4em; margin-bottom: 0.6em; }
+    /* Safety net: any slide can still scroll if content somehow overflows the
+       flex layout below. Without a height bound, `overflow-y: auto` is a no-op —
+       reveal sizes sections to content and clips at the virtual-slide boundary. */
+    .reveal .slides section {
+      max-height: 96vh;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    .reveal .slides section::-webkit-scrollbar { width: 8px; }
+    .reveal .slides section::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.18);
+      border-radius: 4px;
+    }
+    /* Fit-by-construction: leaf slides (reveal marks vertical-stack wrappers
+       with `.stack`, so `:not(.stack)` is every real slide) become a flex
+       column. Title / loc / narrative are pinned; the code (or diagram) is the
+       single flexible region that shrinks and scrolls inside the slide. Result:
+       the slide never exceeds the canvas, and only the code box scrolls — never
+       the whole slide. `min-height: 0` is what lets the flex child shrink below
+       its content so the inner scroll engages. */
+    .reveal .slides section:not(.stack) {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .reveal .slides section:not(.stack) > h2,
+    .reveal .slides section:not(.stack) > h1,
+    .reveal .slides section:not(.stack) > .loc,
+    .reveal .slides section:not(.stack) > .narrative {
+      flex: 0 0 auto;
+    }
+    .reveal .slides section:not(.stack) > pre {
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .reveal .slides section:not(.stack) > pre code { max-height: 100%; }
+    /* Reveal's default theme auto-uppercases H1/H2 and sizes them ~2.5em,
+       which wastes a third of the slide on a title. Override globally. */
+    .reveal h1, .reveal h2, .reveal h3 { text-transform: none; }
+    .reveal h1 { font-size: 1.6em; }
+    .reveal h2 { font-weight: 600; letter-spacing: -0.01em; margin-bottom: 0.15em; font-size: 1.1em; line-height: 1.15; }
+    .reveal .loc { font-size: 0.46em; opacity: 0.7; margin-top: -0.2em; margin-bottom: 0.4em; }
     .reveal .loc a { color: #8ab4f8; text-decoration: none; border-bottom: 1px dotted #8ab4f8; }
     .reveal .loc a:hover { opacity: 1; border-bottom-style: solid; }
     .reveal pre {
       width: 100%;
       box-shadow: 0 4px 24px rgba(0,0,0,0.4);
       border-radius: 6px;
-      font-size: 0.42em;
-      line-height: 1.4;
+      font-size: 0.38em;
+      line-height: 1.35;
     }
-    .reveal pre code { padding: 1em 1.2em; max-height: 48vh; }
+    /* Let code grow on the slide rather than scroll inside its own box (the
+       double-scroll trap). Pair with tight snippets — see SKILL.md. */
+    .reveal pre code { padding: 0.8em 1.1em; max-height: 64vh; }
     .reveal .narrative {
-      font-size: 0.55em;
+      font-size: 0.5em;
       max-width: 80%;
       margin: 0.6em auto 0;
       text-align: left;
@@ -49,7 +90,7 @@
       background: transparent;
       font-size: 1em;
       width: 100%;
-      max-height: 65vh;
+      max-height: 55vh;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -57,7 +98,7 @@
       cursor: zoom-in;
       position: relative;
     }
-    .reveal pre.mermaid svg { max-width: 100%; max-height: 65vh; height: auto; }
+    .reveal pre.mermaid svg { max-width: 100%; max-height: 55vh; height: auto; }
     .reveal pre.mermaid::after {
       content: "click to zoom";
       position: absolute;

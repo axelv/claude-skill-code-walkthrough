@@ -43,7 +43,7 @@ For each stop, gather:
 - **Type** — `code` (snippet + narrative) or `diagram` (mermaid + narrative)
 - For **code** stops:
   - **File path and line range** — e.g. `src/auth/login.ts:42-58`
-  - **Code snippet** — the actual lines (read the file, don't guess). Keep snippets to ~25 lines max; trim with `…` if longer.
+  - **Code snippet** — the actual lines (read the file, don't guess). Keep snippets to **~15 lines** (a 2-line title + narrative leaves room for ~15–18 code lines before the slide scrolls). Trim aggressively with `…` comments, or collapse boilerplate into a one-line `// + ...` comment, rather than dumping a whole function.
   - **Language** — for syntax highlighting (`typescript`, `python`, `go`, etc.)
   - **Highlighted lines** — optional, the 1-3 lines that matter most (reveal.js `data-line-numbers` format: `"3,7-9"` highlights all at once; `"3|7-9|11"` steps through on each `space` press — use the pipe form for tours where you want to walk attention through several regions)
   - **Link** — clickable URL to open the file at that line. Pick a scheme based on the user's editor (don't hardcode):
@@ -112,6 +112,26 @@ These are the failure modes that silently break diagrams. The browser shows a sm
 
 6. **`architecture-beta` is for cloud topology, not codebases.** Its node vocabulary is cloud-icon shaped (database, queue, gateway). For crates, modules, packages, files, or call-graph relationships, use `flowchart` with `subgraph` blocks — it reads much better.
 
+7. **Disconnected subgraphs lay out side-by-side by default.** Two subgraphs with no edge between them are treated as independent components and placed horizontally — the outer `flowchart TB` doesn't override this. The result is two very-wide-and-short flows squeezed across the slide. Two fixes, used together:
+
+   - **Force vertical stacking** with an invisible link between them: `subgraph_a ~~~ subgraph_b` (three tildes). This adds no visible arrow but tells mermaid `b` ranks below `a`.
+   - **Set each subgraph's internal direction** with `direction LR` (or `TB`) inside the subgraph block. Without it, the inner flow inherits the outer direction and you get the wrong axis.
+
+   ```
+   flowchart TB
+     subgraph extract ["$extract: QR -> Resources"]
+       direction LR
+       A --> B --> C
+     end
+     subgraph populate ["$populate: Resources -> QR"]
+       direction LR
+       D --> E --> F
+     end
+     extract ~~~ populate   %% invisible — forces vertical stacking
+   ```
+
+   Same trick works for ASCII-art "compare these two flows" slides — without the `~~~`, they end up shoulder-to-shoulder and unreadable on a 16:9 slide.
+
 ### Step 4: Generate the deck
 
 1. Pick an output directory: `/tmp/code-tour-<timestamp>/`. Create it.
@@ -179,7 +199,15 @@ Report the URL to the user and stop. Do not wait for "next" — they drive the d
 
 #### Before you hand off
 
-Mermaid diagrams render in the browser, not at generation time — a syntax error gives HTTP 200 but a broken slide. Tell the user upfront: **"if any diagram shows an error or empty box, screenshot it (or paste the browser console output) and I'll fix"**. The console error from mermaid names the exact token that confused the parser, which makes fixes one-shot.
+Run the automated check — it catches both failure modes the generator can't see statically (overflow and broken mermaid), because reveal.js scales each slide onto a fixed canvas and renders mermaid in-browser:
+
+```bash
+node "<skill-dir>/check-deck.mjs" "http://127.0.0.1:$PORT/"
+```
+
+It walks every slide and prints a ✓/✗ line per stop, exiting non-zero if any slide overflows the canvas or contains a mermaid error SVG. Fix offenders (trim the snippet, split the stop, or correct the diagram) and re-run until clean. If a stop legitimately needs a long snippet, move the narrative into speaker notes so the slide body is just title + code.
+
+Requires playwright (`npx playwright install chromium` if the browser is missing). If playwright isn't available the script exits 2 — fall back to telling the user upfront: **"if any diagram shows an error or empty box, screenshot it (or paste the browser console output) and I'll fix"**. The console error from mermaid names the exact token that confused the parser, which makes fixes one-shot.
 
 ### Step 6: End
 

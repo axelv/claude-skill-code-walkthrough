@@ -1,8 +1,14 @@
 # code-walkthrough
 
-A [Claude Code](https://claude.com/claude-code) skill that turns a request like *"walk me through this codebase"* into a self-contained [reveal.js](https://revealjs.com/) slide deck — code snippets with syntax highlighting, clickable file:line links, and [Mermaid](https://mermaid.js.org/) diagrams for architecture and flow overviews.
+A [Claude Code](https://claude.com/claude-code) skill that helps you *understand* code. It turns a request like *"walk me through this codebase"* into a self-contained [reveal.js](https://revealjs.com/) slide deck — code snippets with syntax highlighting, clickable file:line links, and [Mermaid](https://mermaid.js.org/) diagrams.
 
-The deck is served locally and opens in the browser. Once it's up, you drive (arrow keys, `space`, `esc` for overview, `s` for speaker notes) — there's no turn-by-turn back-and-forth with the model.
+**There's one tour and one deck; what varies is how it's delivered:**
+
+- **Self-driven** (default) — the deck opens in the browser and you drive (arrow keys, `space`, `esc` for overview, `s` for speaker notes). No turn-by-turn back-and-forth.
+- **Taught** — Claude acts as a teacher and drives the deck interactively. The slide stops *are* a mastery checklist (the problem, the solution, the broader context); Claude has you restate your understanding, drills into the *whys* using each slide's speaker notes and line-by-line highlights, and quizzes you with `AskUserQuestion`. The session doesn't end until you've demonstrated you understand every slide.
+- **Hybrid** — drive the deck yourself, then reconvene and have Claude quiz you on what stuck.
+
+Trigger the taught delivery with phrases like *"teach me"*, *"make sure I understand"*, *"quiz me on"*, or *"help me really understand this"*.
 
 ## How it works
 

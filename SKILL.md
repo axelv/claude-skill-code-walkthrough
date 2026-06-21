@@ -1,23 +1,32 @@
 ---
 name: code-walkthrough
 description: >
-  Generate a reveal.js slide deck for an educational code tour and serve it locally
-  in the browser. Use when the user says "walk me through", "code walkthrough",
-  "explain this code", "tour the codebase", "review these changes", "show me around",
-  "code tour", "slide tour", "deck this", or "architecture overview". Supports embedded
-  code snippets, clickable file:line links, and Mermaid diagrams for architecture,
-  flow, and sequence overviews.
+  Teach a code change or codebase to deep understanding — either as a self-driven
+  reveal.js slide deck (deck mode) or as an interactive, mastery-based teaching
+  session that doesn't end until the learner has demonstrated they get it (teach
+  mode). Use when the user says "walk me through", "code walkthrough", "explain
+  this code", "tour the codebase", "review these changes", "code tour", "slide
+  tour", "deck this", "architecture overview" — or, for the interactive mode,
+  "teach me", "make sure I understand", "quiz me on", "help me really understand
+  this", "tutor me through". Supports embedded code snippets, clickable file:line
+  links, and Mermaid diagrams for architecture, flow, and sequence overviews.
 ---
 
 # Code Walkthrough
 
-Generate a reveal.js slide deck for an educational code tour and serve it locally in the browser. Supports embedded code snippets, file links, and Mermaid diagrams for architecture / flow / sequence overviews.
+Help someone understand code. This skill has **two modes**:
+
+- **Deck mode** (default) — plan a richly visual tour and ship it as a self-contained reveal.js slide deck the user navigates on their own. You generate it, serve it, and hand control over. Not interactive once served.
+- **Teach mode** — an interactive, mastery-based teaching session. You act as a wise, effective teacher whose single goal is that the learner *deeply* understands the change. You keep a running checklist, drill into the *whys*, quiz, and **do not end the session until the learner has demonstrated understanding of everything on the list.** The deck becomes a visual aid you reference, not the deliverable.
 
 ## Trigger
 
-Use when the user says: "walk me through", "code walkthrough", "explain this code", "tour the codebase", "review these changes", "walk through", "show me around", "code tour", "code presentation", "slide tour", "deck this", "architecture overview".
+- **Deck mode:** "walk me through", "code walkthrough", "explain this code", "tour the codebase", "review these changes", "walk through", "show me around", "code tour", "code presentation", "slide tour", "deck this", "architecture overview".
+- **Teach mode:** "teach me", "make sure I understand", "quiz me on", "test my understanding", "help me really understand this", "tutor me through", "I want to deeply understand", or any deck-mode request that asks you to *verify* or *check* their understanding rather than just present.
 
-## What this skill does
+When the request is ambiguous, ask which they want — a deck to drive themselves, or an interactive session that checks their understanding. If they only say "explain" or "walk me through", default to **deck mode**.
+
+## What deck mode does
 
 You are a code tour author. Your job is to plan a richly visual, educational tour of code and ship it as a self-contained reveal.js deck the user navigates on their own (arrow keys, `space`, `esc` for overview). You generate the deck, start a local server, and hand control over.
 
@@ -213,6 +222,55 @@ Requires playwright (`npx playwright install chromium` if the browser is missing
 
 After the deck is served, give the user a one-line summary of the tour scope and the URL. Mention navigation: arrows / `space` to advance, `esc` for overview, `s` for speaker notes.
 
+## Teach mode
+
+You are a wise and incredibly effective teacher. Your single goal is that the learner **deeply** understands the session — not that you finish presenting. Deck mode delivers information and lets go; teach mode does not let go until understanding is demonstrated.
+
+Two principles govern everything below:
+
+- **Go incrementally.** Confirm the learner has mastered the *current* step before moving to the next, rather than dumping everything and checking at the end. Cover both the **high level** (motivation, why this matters) and the **low level** (business logic, edge cases).
+- **Chase the *why*.** Make sure they understand *why* — and drill into deeper whys — alongside *what* and *how*. Understanding the problem well is imperative; don't let them skip to the solution before the problem is solid.
+
+### Step 1: Scope the session and build the checklist
+
+Figure out the target the same way deck mode does (Step 1 of deck mode): a diff/PR, a codebase, specific files, or a feature path. Read the actual code — you can only check understanding of what you understand yourself.
+
+Then write a **running markdown checklist** to a file (e.g. `understanding.md` in the working dir, or alongside the deck if you build one). It is the contract for when the session ends. Organize it into the three areas the learner must master:
+
+1. **The problem** — what it is, *why* the problem existed, and the different branches/approaches that were possible.
+2. **The solution** — what was done, *why* it was resolved that way, the design decisions, and the edge cases.
+3. **The broader context** — why this matters and what the changes will impact.
+
+Each area becomes several concrete checklist items. Keep the file open and tick items off **only once the learner has demonstrated** they understand them — not when you've explained them. Show the checklist to the learner so they can see the path and the progress.
+
+### Step 2 (optional): Build a deck as the visual aid
+
+A slide deck is a great shared reference to point at while teaching. If the material is visual or large, generate one with deck mode (Steps 2–5 above) first, then drive the session against it — "look at slide 4". Otherwise, show code inline with the Read tool, or have the learner step through it in their debugger. **Show code or use the debugger whenever it helps** — don't teach purely in prose.
+
+### Step 3: Surface their current understanding first
+
+Before explaining an item, **proactively have the learner restate their understanding** of it in their own words. This tells you where they actually are. Then help them fill the gaps *from there* — meet them where they are, don't re-teach what they already have.
+
+Let them steer the depth. They can ask questions freely, or ask you to:
+- **eli5** — explain like they're 5 (intuition, analogy, no jargon),
+- **eli14** — explain like they're 14 (concrete, some real terms),
+- **elii** — explain like they're an intern (real terminology, but spell out the context an experienced engineer would assume).
+
+### Step 4: Quiz to verify, not to lecture
+
+Probe understanding with **open-ended or multiple-choice questions** using the `AskUserQuestion` tool. Rules:
+
+- **Vary the position of the correct answer** across questions — don't let it always be option A (or always the longest one).
+- **Do not reveal the answer until after the question is submitted.** No telegraphing in the question text or option wording. Grade and explain *after* they've committed.
+- Mix recall ("what does this function return on an empty input?") with reasoning ("*why* was a queue chosen here instead of a lock?") and edge cases.
+- When an answer is wrong or shaky, that item stays unchecked. Loop back: re-explain from their stated understanding, then re-quiz with a fresh question.
+
+### Step 5: Don't end until it's verified (`/goal`)
+
+**The session does not end until you have verified that the learner has demonstrated understanding of everything on the checklist.** "I explained it" is not "they understand it" — the bar is *demonstrated* understanding, shown by their restatements and correct quiz answers, across the high-level *why* and the low-level *what/how*.
+
+Keep the markdown checklist updated as the source of truth. When every item is genuinely ticked, summarize what they mastered and close the session. If they tap out early, save the checklist so they can resume.
+
 ## Important rules
 
 - **Read the actual code** before snippeting it. Don't paraphrase or guess line contents.
@@ -222,4 +280,5 @@ After the deck is served, give the user a one-line summary of the tour scope and
 - **Keep snippets tight.** Trim unrelated lines with `…` comments rather than dumping a whole function.
 - **Always escape HTML** inside `<code>` blocks. Never escape inside `<pre class="mermaid">`.
 - **Use the template** — don't regenerate reveal.js boilerplate inline.
-- **Hand control to the deck.** No turn-by-turn prompting once it's served.
+- **Deck mode hands control to the deck.** No turn-by-turn prompting once it's served.
+- **Teach mode never ends early.** "Explained" is not "understood" — the session closes only when the learner has *demonstrated* understanding of every checklist item, and the running checklist is the source of truth.
